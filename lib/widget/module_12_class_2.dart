@@ -8,68 +8,89 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  List<Map<String,dynamic>> tasks = [];
+  List<Map<String, dynamic>> tasks = [];
   bool showActiveTask = true;
 
-  void _showTaskDialog({int? index}){
-    TextEditingController _taskController = TextEditingController();
-    showDialog(context: context, builder: (context)=>AlertDialog(
-      title: Text("Add Task"),
-      content: TextField(
-        controller: _taskController,
-        decoration: InputDecoration(
-          hintText: 'Enter Task',
-        ),
-      ),
-      actions: [
-        TextButton(onPressed: (){
-          Navigator.pop(context);
-        }, child: Text("Cancel")),
-        ElevatedButton(
-           style: ElevatedButton.styleFrom(
-        shape: StadiumBorder(),
-             backgroundColor: Colors.purple,
-             foregroundColor: Colors.white
-        ),
-            onPressed: () => _addTask(_taskController.text), child: Text("Save"))
-      ],
-    ));
+  void _showTaskDialog({int? index}) {
+    TextEditingController taskController = TextEditingController(
+      text: index != null ? tasks[index]['task'] : '',
+    );
+    showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+              title: Text(index != null ?'Edit Task':"Add Task"),
+              content: TextField(
+                controller: taskController,
+                decoration: const InputDecoration(
+                  hintText: 'Enter Task',
+                ),
+              ),
+              actions: [
+                TextButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                    child: const Text("Cancel")),
+                ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                        shape: const StadiumBorder(),
+                        backgroundColor: Colors.purple,
+                        foregroundColor: Colors.white),
+                    onPressed: () {
+                      if(taskController.text.trim().isNotEmpty){
+                        if (index == null){
+                          _addTask(taskController.text);
+                        }else{
+                          _editTask(index, taskController.text);
+                        }
+                      }
+                    },
+                    child: const Text("Save"))
+              ],
+            ));
   }
 
-  void _addTask(String task){
+  void _addTask(String task) {
     setState(() {
-      tasks.add(
-        {
-          'task' : task,
-          'completed' : false
-        }
-      );
+      tasks.add({'task': task, 'completed': false});
     });
     Navigator.pop(context);
   }
 
-  void _toggleTask(int index){
+  void _toggleTask(int index) {
     setState(() {
       tasks[index]['completed'] = !tasks[index]['completed'];
     });
   }
 
-  void _deleteTask(int index){
+  void _deleteTask(int index) {
     setState(() {
       tasks.removeAt(index);
     });
   }
+
+  void _editTask(int index,String updateTask){
+    setState(() {
+      tasks[index]['task'] = updateTask;
+    });
+    Navigator.pop(context);
+  }
+
+  int get activeCount => tasks.where((task)=> !task['completed']).length;
+  int get completedCount => tasks.where((task)=> task['completed']).length;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.purple.shade50,
       appBar: AppBar(
-        title: Text("TODO LIST"),
+        title: const Text("TODO LIST"),
       ),
       body: Column(
         children: [
-          SizedBox(height: 15,),
+          const SizedBox(
+            height: 15,
+          ),
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Row(
@@ -79,70 +100,104 @@ class _HomePageState extends State<HomePage> {
                   decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(16),
-                      boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)]),
-                  padding: EdgeInsets.all(16),
+                      boxShadow: const [
+                        BoxShadow(color: Colors.black12, blurRadius: 4)
+                      ]),
+                  padding: const EdgeInsets.all(16),
                   child: Column(
                     children: [
-                      Text(
+                      const Text(
                         "Actice",
-                        style: TextStyle(fontSize: 23, fontWeight: FontWeight.w500),
+                        style: TextStyle(
+                            fontSize: 23, fontWeight: FontWeight.w500),
                       ),
                       Text(
-                        "20",
-                        style: TextStyle(fontSize: 25, fontWeight: FontWeight.bold),
+                        activeCount.toString(),
+                        style: const TextStyle(
+                            fontSize: 25, fontWeight: FontWeight.bold),
                       ),
                     ],
                   ),
                 ),
-
                 Container(
                   decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(16),
-                      boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)]),
-                  padding: EdgeInsets.all(16),
+                      boxShadow: const [
+                        BoxShadow(color: Colors.black12, blurRadius: 4)
+                      ]),
+                  padding: const EdgeInsets.all(16),
                   child: Column(
                     children: [
-                      Text(
+                      const Text(
                         "Completed",
-                        style: TextStyle(fontSize: 23, fontWeight: FontWeight.w500),
+                        style: TextStyle(
+                            fontSize: 23, fontWeight: FontWeight.w500),
                       ),
                       Text(
-                        "20",
-                        style: TextStyle(fontSize: 25, fontWeight: FontWeight.bold),
+                        completedCount.toString(),
+                        style: const TextStyle(
+                            fontSize: 25, fontWeight: FontWeight.bold),
                       ),
                     ],
                   ),
                 ),
-
               ],
             ),
           ),
-          
           Expanded(
             child: ListView.builder(
                 itemCount: tasks.length,
-                itemBuilder: (context,index){
+                itemBuilder: (context, index) {
                   return Dismissible(
-                    key: Key(tasks[index]['task']),
+                    key: UniqueKey(),
                     background: Container(
-                      color: Colors.red,
-                      alignment: Alignment.centerRight,,
+                      color: Colors.green,
+                      alignment: Alignment.centerLeft,
+                      padding: const EdgeInsets.only(left: 20),
+                      child: const Icon(
+                        Icons.check,
+                        color: Colors.white,
+                      ),
                     ),
+                    secondaryBackground: Container(
+                      color: Colors.red,
+                      alignment: Alignment.centerRight,
+                      padding: const EdgeInsets.only(right: 20),
+                      child: const Icon(
+                        Icons.delete,
+                        color: Colors.white,
+                      ),
+                    ),
+                    onDismissed: (direction) {
+                      if (direction == DismissDirection.startToEnd) {
+                        _toggleTask(index);
+                      } else {
+                        _deleteTask(index);
+                      }
+                    },
                     child: Card(
                       child: ListTile(
-                        title: Text(tasks[index]['task']),
+                        title: Text(
+                          tasks[index]['task'],
+                          style: TextStyle(
+                              fontSize: 16,
+                          decoration: tasks[index]['completed']? TextDecoration.lineThrough : null,),
+                        ),
+                        leading: Checkbox(
+                            shape: const CircleBorder(),
+                            value: tasks[index]['completed'], onChanged:(value) => _toggleTask(index)),
+                        trailing: IconButton(onPressed: ()=> _showTaskDialog(index: index), icon: const Icon(Icons.edit)),
                       ),
                     ),
                   );
-                }
-                ),
+                }),
           )
         ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showTaskDialog(),
-        child: Icon(Icons.add),
+        child: const Icon(Icons.add),
       ),
     );
   }
